@@ -4,16 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>后台切换通知</title>
+    <style>
+        #pythonCode {
+            width: 100%;
+            height: 100px;
+        }
+        #output {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 100%;
+            min-height: 100px;
+        }
+        #progressBar {
+            width: 100%;
+            height: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>后台切换通知示例</h1>
     <button id="notifyButton">点击发送通知</button>
+    <button id="runPythonButton" disabled>运行Python代码</button>
 
+    <h2>Python代码输入框</h2>
+    <textarea id="pythonCode" placeholder="在这里输入Python代码"></textarea>
+
+    <h2>运行结果预览框</h2>
+    <div id="output"></div>
+
+    <h2>加载进度</h2>
+    <progress id="progressBar" value="0" max="100"></progress>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
     <script>
         // 检查浏览器是否支持Notification API
         if (!("Notification" in window)) {
             alert("此浏览器不支持桌面通知");
         } else {
+            let pyodideReady = false;
+            let pyodideLoading = false;
+
             // 请求通知权限
             function requestNotificationPermission() {
                 Notification.requestPermission().then(function(permission) {
@@ -62,9 +92,45 @@
                 });
             });
 
+            // 运行Python代码
+            document.getElementById("runPythonButton").addEventListener("click", function() {
+                const pythonCode = document.getElementById("pythonCode").value;
+                if (pythonCode.trim() === "") {
+                    document.getElementById("output").innerText = "请输入Python代码";
+                    return;
+                }
+
+                if (!pyodideReady) {
+                    document.getElementById("output").innerText = "Pyodide尚未加载完成，请稍后再试";
+                    return;
+                }
+
+                document.getElementById("output").innerText = "正在运行Python代码...";
+                try {
+                    const result = pyodide.runPython(pythonCode);
+                    document.getElementById("output").innerText = "运行结果: " + result;
+                } catch (error) {
+                    document.getElementById("output").innerText = "运行错误: " + error.message;
+                }
+            });
+
             // 页面加载完成后请求通知权限并发送通知
             window.onload = function() {
                 requestNotificationPermission();
+                pyodideLoading = true;
+                document.getElementById("progressBar").value = 10;
+                loadPyodide().then(pyodideInstance => {
+                    pyodide = pyodideInstance;
+                    pyodideReady = true;
+                    pyodideLoading = false;
+                    document.getElementById("progressBar").value = 100;
+                    document.getElementById("runPythonButton").disabled = false;
+                    document.getElementById("output").innerText = "Pyodide加载成功";
+                }).catch(error => {
+                    pyodideLoading = false;
+                    document.getElementById("progressBar").value = 0;
+                    document.getElementById("output").innerText = "加载Pyodide失败: " + error.message;
+                });
             };
         }
     </script>
