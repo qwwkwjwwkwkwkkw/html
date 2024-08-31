@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台切换通知</title>
+</head>
+<body>
+    <h1>后台切换通知示例</h1>
+    <button id="notifyButton">点击发送通知</button>
+
+    <script>
+        // 检查浏览器是否支持Notification API
+        if (!("Notification" in window)) {
+            alert("此浏览器不支持桌面通知");
+        } else {
+            // 请求通知权限
+            function requestNotificationPermission() {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === "granted") {
+                        console.log("用户允许通知");
+                        sendNotification("欢迎访问我们的网站", {
+                            body: "感谢您的访问",
+                            icon: "icon.png"
+                        });
+                    } else if (permission === "denied") {
+                        console.log("用户拒绝通知");
+                    }
+                }).catch(function(error) {
+                    console.error("请求通知权限时发生错误:", error);
+                });
+            }
+
+            // 发送通知
+            function sendNotification(title, options) {
+                if (Notification.permission === "granted") {
+                    try {
+                        new Notification(title, options);
+                    } catch (error) {
+                        console.error("发送通知时发生错误:", error);
+                    }
+                } else {
+                    console.log("没有通知权限");
+                }
+            }
+
+            // 页面切换到后台时发送通知
+            document.addEventListener("visibilitychange", function() {
+                if (document.hidden) {
+                    sendNotification("网站已切换到后台", {
+                        body: "您已将网站切换到后台",
+                        icon: "icon.png"
+                    });
+                }
+            });
+
+            // 按钮点击事件处理
+            document.getElementById("notifyButton").addEventListener("click", function() {
+                sendNotification("按钮点击通知", {
+                    body: "您点击了发送通知按钮",
+                    icon: "icon.png"
+                });
+            });
+
+            // 页面加载完成后请求通知权限并发送通知
+            window.onload = function() {
+                requestNotificationPermission();
+            };
+        }
+    </script>
+</body>
+</html>
